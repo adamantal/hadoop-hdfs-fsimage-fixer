@@ -73,12 +73,14 @@ while true; do
     read -p "Do you want to repair the image (y/n)? " yn
     case $yn in
         [Yy]* )
+          REPAIR=1
           echo "Replacing the HDFS jars in tarball to run with fix."
           mv $HADOOPVERSION/share/hadoop/hdfs/$VERSION.jar{,.orig}
           cp $SCRIPT_DIR/patches/$VERSION.jar $HADOOPVERSION/share/hadoop/hdfs/
           break
           ;;
         [Nn]* )
+          REPAIR=0
           echo "Just checking if the NN can start up."
           break
           ;;
@@ -150,27 +152,33 @@ do
   fi
 done
 
-echo "Saving namespace to generate fixed image files..."
-$HADOOPVERSION/bin/hdfs dfsadmin -saveNamespace 2>/dev/null >/dev/null
-echo
-echo "**************************************"
-echo
-echo "Work done! Fixed images available now."
-echo
-echo "The fixed fsimage file(s) from $FSIMAGE_DIR:"
-echo $(ls -rt $FSIMAGE_DIR/current/fsimage* | tail -2)
-echo
-echo "**************************************"
+if [ "$REPAIR" -eq "1" ]; then
+  echo "Saving namespace to generate fixed image files..."
+  $HADOOPVERSION/bin/hdfs dfsadmin -saveNamespace 2>/dev/null >/dev/null
+  echo
+  echo "**************************************"
+  echo
+  echo "Work done! Fixed images available now."
+  echo
+  echo "The fixed fsimage file(s) from $FSIMAGE_DIR:"
+  echo $(ls -rt $FSIMAGE_DIR/current/fsimage* | tail -2)
+  echo
+  echo "**************************************"
+else
+  echo "No error occured during NN startup - fsimage probably not corrupted."
+fi
 
 echo "Stopping the NameNode and cleaning up!"
 kill $NN_PID 2> /dev/null > /dev/null
 rm -rf $HADOOPVERSION $HADOOPVERSION.tar.gz
 
-while true; do
-    read -p "Wish to see the repairs (y/n)? " yn
-    case $yn in
-        [Yy]* ) grep --color=always 'PATCHED:' namenode.err; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer y or n.";;
-    esac
-done
+if [ "$REPAIR" -eq "1" ]; then
+  while true; do
+      read -p "Wish to see the repairs (y/n)? " yn
+      case $yn in
+          [Yy]* ) grep --color=always 'PATCHED:' namenode.err; break;;
+          [Nn]* ) break;;
+          * ) echo "Please answer y or n.";;
+      esac
+  done
+fi
