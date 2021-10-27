@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#Hi, I didn't find any other way to contact with you. Could you please get some infromation about how to prepare the patch for the hadoop 3.2.1. 
+#My email: mkfs.ext4@gmail.com
+#Thank you
+
 echo 'Checking preconditions...'
 
 if [ "$1" = "" ]; then
